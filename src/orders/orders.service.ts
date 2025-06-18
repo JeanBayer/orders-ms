@@ -15,6 +15,7 @@ import { ChangeOrderStatusDto } from './dto/change-order-status.dto';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { OrderItemDto } from './dto/order-item.dto';
 import { OrderResponse } from './dto/order-response.dto';
+import { PaidOrderDto } from './dto/paid-order.dto';
 import { ProductDto, ProductItemDto } from './dto/product.dto';
 
 @Injectable()
@@ -150,6 +151,30 @@ export class OrdersService extends PrismaClient implements OnModuleInit {
     );
 
     return paymentSessionUrl;
+  }
+
+  async paidOrder(paidOrderDto: PaidOrderDto) {
+    this.logger.log('[INIT][paidOrder]');
+    this.logger.log('[][paidOrder] - paidOrderDto', paidOrderDto);
+    const order = await this.order.update({
+      where: {
+        id: paidOrderDto.orderId,
+      },
+      data: {
+        status: 'PAID',
+        paid: true,
+        paidAt: new Date(),
+        stripChargeId: paidOrderDto.stripePaymentId,
+        OrderReceipt: {
+          create: {
+            receiptUrl: paidOrderDto.receiptUrl,
+          },
+        },
+      },
+    });
+    this.logger.log('[][paidOrder] - order result', order);
+    this.logger.log('[END][paidOrder]');
+    return order;
   }
 
   private async getValidatedProducts(
